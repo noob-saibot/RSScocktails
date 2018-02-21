@@ -1,43 +1,10 @@
 from grab import Grab
+from RSSdb import Cocktails, Connector
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import Column, Integer, String
 from sqlalchemy import Sequence
-
-Base = declarative_base()
-
-
-class Cocktails(Base):
-     __tablename__ = 'cocktails'
-
-     id = Column(Integer, Sequence('cocktail_id_seq'), primary_key=True)
-     name = Column(String(250))
-     ing = Column(String)
-     ing_html = Column(String)
-     mix = Column(String)
-
-
-class Saver:
-    def __init__(self):
-        engine = create_engine('sqlite:///bartender.db', echo=False)
-        Base.metadata.create_all(engine)
-        Session = sessionmaker(bind=engine)
-        self.session = Session()
-
-    def db_writer(self, data):
-        if self.check_data(data):
-            self.session.add(data)
-        else:
-            print('Cant add wrong format or duplicated')
-            # print(data)
-
-    def check_data(self, data):
-        return data.name not in list(map(lambda x: x.name, self.session.query(Cocktails)))
-
-    def commit(self):
-        self.session.commit()
-        print('Committed')
 
 
 class Grabber:
@@ -46,7 +13,7 @@ class Grabber:
         self.db_instance = None
 
     def connect_db(self):
-        self.db_instance = Saver()
+        self.db_instance = Connector()
 
     def run(self):
         if not self.db_instance:
