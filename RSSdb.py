@@ -25,8 +25,11 @@ class Connector:
         Session = sessionmaker(bind=self.engine)
         self.session = Session()
 
-    def get_values(self):
-        return pd.read_sql_table(Cocktails.__tablename__, self.engine)
+    def get_values(self, name):
+        return pd.read_sql_table(name, self.engine)
+
+    def create_table(self, dataframe,  name):
+        return dataframe.to_sql(name, self.engine, index=False, if_exists='replace')
 
     def db_writer(self, data):
         if self.check_data(data):
