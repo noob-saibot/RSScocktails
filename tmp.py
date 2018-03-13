@@ -1,21 +1,15 @@
-from grab import Grab
-from sqlalchemy import create_engine
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
-from sqlalchemy import Column, Integer, String
-from sqlalchemy import Sequence
-from RSSgrab import Cocktails
-from RSSdb import Connector
-# engine = create_engine('sqlite:///bartender.db', echo=False)
-#
-# Session = sessionmaker(bind=engine)
-# session = Session()
-#
-# print(len(list(session.query(Cocktails))))
-# for instance in session.query(Cocktails):
-#     print(instance.name)
-#     # print(instance.mix)
-#
-# session.close()
+import pickle
 
-print(Connector().get_values())
+distances = {'euclidean': None,
+             'cosine': None,
+             # 'minkowski': None,
+             #'chebyshev': None
+             }
+
+for key in distances.keys():
+    with open('/home/beast/cocktails/pickle_objects/{}'.format(key), 'rb') as f:
+        distances[key] = pickle.load(f).head(10)
+
+print(distances)
+with open('data_encoder', 'wb') as f:
+    pickle.dump(distances, f)
