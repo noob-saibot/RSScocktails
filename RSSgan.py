@@ -1,5 +1,7 @@
 import numpy as np
 import tensorflow as tf
+import seaborn
+import matplotlib.pyplot as plt
 
 batch_size = 64
 updates = 40000
@@ -42,17 +44,36 @@ h2db = tf.summary.histogram("biases_d2", disc_weights['b2'])
 h3dw = tf.summary.histogram("weights_d3", disc_weights['w2'])
 h3db = tf.summary.histogram("biases_d3", disc_weights['b2'])
 
+
 def discriminator(x):
     d_h1 = tf.nn.tanh(tf.add(tf.matmul(x, disc_weights['w1']), disc_weights['b1']))
     d_h2 = tf.nn.tanh(tf.add(tf.matmul(d_h1, disc_weights['w2']), disc_weights['b2']))
-    score = tf.nn.sigmoid(tf.add(tf.matmul(d_h2, disc_weights['w3']), disc_weights['b3']))
-    return score
+    # TODO read about!
+    # score = tf.nn.sigmoid(tf.add(tf.matmul(d_h2, disc_weights['w3']), disc_weights['b3']))
+    # return score
+
+    logits = tf.add(tf.matmul(d_h2, disc_weights['w3']), disc_weights['b3'])
+    return logits
+
 
 x_data_score = discriminator(x_d)
 x_gen_score = discriminator(x_g)
 
-D_cost = -tf.reduce_mean(tf.log(x_data_score) + tf.log(1.0 - x_gen_score))
-G_cost = tf.reduce_mean(tf.log(1.0 - x_gen_score))
+D_plus_cost = tf.reduce_mean(tf.nn.relu(x_data_score)
+                             - x_data_score
+                             + tf.log(1.0 + tf.exp(-tf.abs(x_data_score))))
+D_minus_cost = tf.reduce_mean(tf.nn.relu(x_gen_score)
+                              + tf.log(1.0 + tf.exp(-tf.abs(x_gen_score))))
+
+G_cost = tf.reduce_mean(tf.nn.relu(x_gen_score)
+                        - x_gen_score
+                        + tf.log(1.0 + tf.exp(-tf.abs(x_gen_score))))
+
+D_cost = D_plus_cost + D_minus_cost
+
+# TODO read about!
+# D_cost = -tf.reduce_mean(tf.log(x_data_score) + tf.log(1.0 - x_gen_score))
+# G_cost = tf.reduce_mean(tf.log(1.0 - x_gen_score))
 
 tf.summary.scalar("cost_function_G", G_cost)
 tf.summary.scalar("cost_function_D", D_cost)
@@ -83,6 +104,18 @@ for i in range(updates):
     sess.run(D_optimizer, feed_dict={z_p: z_batch, x_d: x_batch})
     z_batch = sample_z()
     sess.run(G_optimizer, feed_dict={z_p: z_batch})
+
+    if i % 300 == 0:
+        print('Step: ', i)
+        test_z = sample_z(10000)
+        test_x = sample_x(10000)
+        seaborn.distplot(test_x)
+        seaborn.distplot(test_z)
+        # seaborn.distplot(sess.run(discriminator(x_g), feed_dict={z_p: test_z}))
+        seaborn.distplot(sess.run(x_g, feed_dict={z_p: test_z, x_d: test_x}))
+        plt.show()
+        print('Discriminator cost: ', sess.run(D_cost, feed_dict={z_p: test_z, x_d: test_x}))
+        print('Generator cost: ', sess.run(G_cost, feed_dict={z_p: test_z}))
 
     summary_str = sess.run(merged_summary_op, feed_dict={z_p: z_batch, x_d: x_batch})
     summary_writer.add_summary(summary_str, i * batch_size + i)
