@@ -44,5 +44,5 @@ class Connector:
         self.session.commit()
         print('Committed')
 
-    def __del__(self):
-        self.session.close()
+    # def __del__(self):
+    #     self.session.close()
